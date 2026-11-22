@@ -47,10 +47,18 @@ TOPICS = [
     (r"\bmount\b|\bumount\b", "يركّب أو يفك أقسام"),
 ]
 
+# Destructive no matter where: filesystem/partition tools, find -delete, rm --recursive/--force.
+DESTRUCTIVE = re.compile(r"""\b(?:mkfs[\w.]*|mke2fs|mkswap|wipefs|blkdiscard|sfdisk|cfdisk|gdisk|sgdisk|fdisk|parted|cryptsetup)\b
+    | \bdd\b[^;&|]*\bof=
+    | \bfind\b[^;&|]*\s-(?:delete|exec(?:dir)?\s+(?:/usr/bin/|/bin/)?(?:rm|shred|unlink|mv|chmod|chown)\b)
+    | \bshred\b""", re.X)
+RM_LONG = re.compile(r"""\brm['"]?\s+(?:-\S+\s+)*--(?:recursive|force|no-preserve-root)\b(?![^;&|]*\s/sources/build/[\w.+-]+(?:\s|$|[;&|'"]))""")
 RM_OUTSIDE_BUILD = re.compile(r"""\brm['"]?\s+(?:-\w+\s+)*-\w*[rf]\w*\s+(?!/sources/build/[\w.+-]+(?:\s|$|[;&|'"]))""")
 
 reasons = []
-if RM_OUTSIDE_BUILD.search(text):
+if DESTRUCTIVE.search(text):
+    reasons.append("أمر تدميري (فورمات/تقسيم/حذف جماعي)")
+if RM_OUTSIDE_BUILD.search(text) or RM_LONG.search(text):
     reasons.append("حذف (rm -r/-f) خارج /sources/build")
 if writes(text):
     reasons += [why for pat, why in TOPICS if re.search(pat, text, re.I)]
