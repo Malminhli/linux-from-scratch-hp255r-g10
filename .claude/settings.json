@@ -1,0 +1,105 @@
+{
+  "permissions": {
+    "defaultMode": "auto",
+    "additionalDirectories": [
+      "/mnt/lfs"
+    ],
+    "allow": [
+      "Read(//mnt/lfs/**)",
+      "Bash(findmnt *)",
+      "Bash(lsblk *)",
+      "Bash(free *)",
+      "Bash(df *)",
+      "Bash(nproc)",
+      "Bash(uname *)",
+      "Bash(lspci *)",
+      "Bash(lsusb *)",
+      "Bash(lsmod)",
+      "Bash(ldd *)",
+      "Bash(readelf *)",
+      "Bash(pkg-config *)",
+      "Bash(journalctl *)",
+      "Bash(systemctl --root=/mnt/lfs *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git pull *)",
+      "Bash(git fetch *)",
+      "Bash(sudo chroot /mnt/lfs *)",
+      "Edit(./logs/**)",
+      "Edit(./docs/**)",
+      "Edit(./README.md)",
+      "Edit(./dotfiles/**)",
+      "Edit(./configs/**)",
+      "WebSearch",
+      "WebFetch(domain:www.linuxfromscratch.org)",
+      "WebFetch(domain:linuxfromscratch.org)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:wiki.hypr.land)",
+      "WebFetch(domain:wiki.hyprland.org)",
+      "WebFetch(domain:wiki.archlinux.org)",
+      "WebFetch(domain:gitlab.freedesktop.org)",
+      "WebFetch(domain:docs.mesa3d.org)",
+      "WebFetch(domain:www.kernel.org)"
+    ],
+    "ask": [
+      "Bash(sudo tee *)",
+      "Bash(sudo cp *)",
+      "Bash(sudo mv *)",
+      "Bash(sudo tar *)",
+      "Bash(sudo sed *)",
+      "Bash(sudo grub-mkconfig *)",
+      "Bash(sudo pacman *)",
+      "Bash(pacman *)",
+      "Bash(git reset *)",
+      "Bash(git clean *)",
+      "Edit(//mnt/lfs/**)",
+      "Edit(//etc/**)",
+      "Edit(//boot/**)"
+    ],
+    "deny": [
+      "Bash(dd *)",
+      "Bash(sudo dd *)",
+      "Bash(wipefs *)",
+      "Bash(sudo wipefs *)",
+      "Bash(fdisk *)",
+      "Bash(sudo fdisk *)",
+      "Bash(parted *)",
+      "Bash(sudo parted *)",
+      "Bash(sgdisk *)",
+      "Bash(sudo sgdisk *)",
+      "Bash(sudo efibootmgr *)",
+      "Bash(mkfs*)",
+      "Bash(sudo mkfs*)",
+      "Bash(mke2fs *)",
+      "Bash(sudo mke2fs *)",
+      "Bash(blkdiscard *)",
+      "Bash(sudo blkdiscard *)",
+      "Bash(sfdisk *)",
+      "Bash(sudo sfdisk *)",
+      "Bash(cfdisk *)",
+      "Bash(sudo cfdisk *)",
+      "Bash(gdisk *)",
+      "Bash(sudo gdisk *)",
+      "Bash(cryptsetup *)",
+      "Bash(sudo cryptsetup *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/lfs-guard.py\""
+          }
+        ]
+      }
+    ]
+  }
+}
