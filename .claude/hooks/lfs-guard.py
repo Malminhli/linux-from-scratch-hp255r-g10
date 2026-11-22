@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
-"""Stops and asks Mohammed before risky commands, even ones an allow rule would pass
-(e.g. inside `sudo chroot /mnt/lfs ...`). Prints a PreToolUse 'ask' decision."""
+"""LFS safety guard (PreToolUse hook for Bash).
+
+Stops and asks Mohammed ONLY when a command both
+  1) actually changes something (writes, installs, deletes, edits users/services/boot), and
+  2) touches a sensitive area (PAM, users, boot/GRUB/kernel, fstab/sudoers, other partitions,
+     network setup) — or deletes outside /sources/build.
+Pure reads never stop, however they are written. Prints a PreToolUse 'ask' decision or nothing.
+"""
 import json, re, sys
 
 try:
@@ -8,51 +14,43 @@ try:
 except Exception:
     sys.exit(0)
 
-RISKY = [
-    (r"/etc/pam\.d|pam_|Linux-PAM|linux-pam", "يلمس PAM — غلطة هنا ممكن تقفلك برا LFS"),
-    (r"\bshadow\b|/etc/passwd|/etc/shadow|/etc/group|\bpasswd\b|\busermod\b|\buseradd\b|\bchpasswd\b", "يعدّل المستخدمين أو كلمات السر"),
-    (r"/boot\b|vmlinuz|grub|efibootmgr|/efi\b", "يلمس الإقلاع أو النواة أو GRUB"),
-    (r"\brm['\"]?\s+-[a-zA-Z]*[rf][a-zA-Z]*\s+(?!/sources/build/[\w.+-]+(\s|$|[;&|'\"]))", "حذف (rm -r/-f) خارج /sources/build"),
+text = cmd.replace("2>&1", " ").replace("2>/dev/null", " ").replace("&>/dev/null", " ").replace(">/dev/null", " ")
+
+WRITES = re.compile(r"""
+    (?<![<>=!-])>(?![=&])                                  # output redirect (not >=, ->, 2>&1)
+  | \btee\b | \bsed\s+(?:-\w+\s+)*-\w*i | \bperl\s+-\w*i
+  | \b(?:cp|mv|rm|install|ln|chmod|chown|chgrp|touch|truncate|shred|unlink|rmdir|patch|dd)\b
+  | \b(?:useradd|usermod|userdel|groupadd|groupmod|groupdel|gpasswd|passwd|chpasswd|chsh|chage|vipw|vigr|visudo|pwconv|grpconv)\b
+  | \bsystemctl\s+(?:\S+\s+)*(?:enable|disable|mask|unmask|edit|set-default|link|preset)\b
+  | \b(?:grub-\w+|update-grub|efibootmgr|mkinitcpio|dracut|bootctl)\b
+  | \b(?:mount|umount|swapon|swapoff|mkswap|losetup)\b
+  | \b(?:make|ninja|meson|cmake)\b[^;&|]*\binstall\b
+  | \b(?:modprobe|insmod|rmmod|depmod)\b
+  | \btar\s+(?:-\w*x|x)
+""", re.X)
+
+TOPICS = [
+    (r"/etc/pam\.d|\bpam_|linux-pam", "يلمس PAM — غلطة هنا ممكن تقفلك برا LFS"),
+    (r"/etc/(?:passwd|shadow|group|gshadow)\b|\b(?:useradd|usermod|userdel|passwd|chpasswd|gpasswd|vipw)\b", "يعدّل المستخدمين أو كلمات السر"),
+    (r"/boot\b|vmlinuz|\bgrub|efibootmgr|bootctl|/efi\b|\bmodules_install\b", "يلمس الإقلاع أو النواة أو GRUB"),
     (r"/etc/fstab|/etc/sudoers", "يعدّل fstab أو sudoers"),
-    (r"nvme0n1p[0-57-9]\b|/dev/nvme0n1\b", "يلمس قسم غير قسم LFS (p6)"),
-    (r"systemctl\s+(disable|mask)|/etc/systemd/network|wpa_supplicant", "يغيّر خدمات أو إعداد الشبكة الحالي"),
-    (r"\bmake\s+modules_install|\bmake\s+install\b.*linux-", "يثبت نواة أو وحدات نواة"),
-    (r"chmod\s+-R|chown\s+-R\s+\S+\s+/(?!home|sources)", "تغيير صلاحيات بشكل واسع"),
+    (r"nvme0n1p[0-57-9]\b|/dev/nvme0n1\b(?!p6)", "يلمس قسم غير قسم LFS (p6)"),
+    (r"/etc/systemd/network|wpa_supplicant|systemctl\s+(?:\S+\s+)*(?:disable|mask)\b", "يغيّر الشبكة الحالية أو يطفّي خدمات"),
+    (r"\bmount\b|\bumount\b", "يركّب أو يفك أقسام"),
 ]
 
-# Pure read-only commands never need a safety stop, even if they mention /boot or other partitions.
-READONLY = {"ls","cat","head","tail","less","grep","egrep","rg","find","stat","file","du","df","lsblk","findmnt",
-            "blkid","free","nproc","uname","lspci","lsusb","lsmod","ldd","readelf","pkg-config","wc","sort","uniq",
-            "echo","printf","pwd","which","type","tree","diff","cmp","md5sum","sha256sum","journalctl","dmesg",
-            "git","awk","cut","tr","column","true","test","[","realpath","readlink","basename","dirname","id","groups","date",
-            "for","done","fi","command","printf","",
-            "sed","zcat","zgrep","xzcat","bzcat","strings","comm","join","paste","nl","od","xxd","hexdump","jq","shopt","set","local","export","modinfo","objdump","nm","lddtree","stat","sha1sum","b2sum"}
-WRITE_HINT = re.compile(r">|\btee\b|-delete\b|-exec\b|\bsed\s+-i|git\s+(push|reset|clean|checkout|rebase)")
-# Unwrap `bash -c '...'` / `sh -c "..."` so the read-only check sees the real commands.
-m = re.match(r"""^\s*(?:/usr/bin/|/bin/)?(?:bash|sh)\s+(?:-\w+\s+)*-c\s+(['"])(.*)\1\s*$""", cmd, re.S)
-inner = m.group(2) if m else cmd
-noquote = re.sub(r"\"[^\"]*\"|'[^']*'", " Q ", inner)   # quoted text is data, not commands
-flat = re.sub(r"\$\(|`|\)", " ; ", noquote)   # expose commands inside $( ) and backticks
-parts = [p.strip() for p in re.split(r"&&|\|\||[;|\n]", flat) if p.strip()]
-def prog(part):
-    toks = part.split()
-    while toks and ("=" in toks[0] and not toks[0].startswith("=")):  # VAR=x prefix
-        toks = toks[1:]
-    while toks and toks[0] in ("do","then","else","elif","if","while","until","!","{","(","time"):
-        toks = toks[1:]          # look past shell keywords to the real program
-        while toks and ("=" in toks[0] and not toks[0].startswith("=")):
-            toks = toks[1:]
-    if toks and toks[0] == "for":
-        return "for"             # loop header only lists words, runs nothing
-    return toks[0].rsplit("/", 1)[-1] if toks else ""
-if parts and all(prog(p) in READONLY | {"cd"} for p in parts) and not WRITE_HINT.search(re.sub(r"\"[^\"]*\"|'[^']*'", "", inner).replace("2>&1","").replace("2>/dev/null","")):
-    sys.exit(0)
+RM_OUTSIDE_BUILD = re.compile(r"""\brm['"]?\s+(?:-\w+\s+)*-\w*[rf]\w*\s+(?!/sources/build/[\w.+-]+(?:\s|$|[;&|'"]))""")
 
-hits = [why for pat, why in RISKY if re.search(pat, cmd, re.I)]
-if hits:
+reasons = []
+if RM_OUTSIDE_BUILD.search(text):
+    reasons.append("حذف (rm -r/-f) خارج /sources/build")
+if WRITES.search(text):
+    reasons += [why for pat, why in TOPICS if re.search(pat, text, re.I)]
+
+if reasons:
     print(json.dumps({"hookSpecificOutput": {
         "hookEventName": "PreToolUse",
         "permissionDecision": "ask",
-        "permissionDecisionReason": "⚠️ وقفة أمان: " + " · ".join(dict.fromkeys(hits)),
+        "permissionDecisionReason": "⚠️ وقفة أمان: " + " · ".join(dict.fromkeys(reasons)),
     }}, ensure_ascii=False))
 sys.exit(0)
