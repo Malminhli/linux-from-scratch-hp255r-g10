@@ -28,7 +28,10 @@ READONLY = {"ls","cat","head","tail","less","grep","egrep","rg","find","stat","f
             "for","done","fi","command","printf","",
             "sed","zcat","zgrep","xzcat","bzcat","strings","comm","join","paste","nl","od","xxd","hexdump","jq","shopt","set","local","export","modinfo","objdump","nm","lddtree","stat","sha1sum","b2sum"}
 WRITE_HINT = re.compile(r">|\btee\b|-delete\b|-exec\b|\bsed\s+-i|git\s+(push|reset|clean|checkout|rebase)")
-flat = re.sub(r"\$\(|`|\)", " ; ", cmd)   # expose commands inside $( ) and backticks
+# Unwrap `bash -c '...'` / `sh -c "..."` so the read-only check sees the real commands.
+m = re.match(r"""^\s*(?:/usr/bin/|/bin/)?(?:bash|sh)\s+(?:-\w+\s+)*-c\s+(['"])(.*)\1\s*$""", cmd, re.S)
+inner = m.group(2) if m else cmd
+flat = re.sub(r"\$\(|`|\)", " ; ", inner)   # expose commands inside $( ) and backticks
 parts = [p.strip() for p in re.split(r"&&|\|\||[;|\n]", flat) if p.strip()]
 def prog(part):
     toks = part.split()
@@ -41,7 +44,7 @@ def prog(part):
     if toks and toks[0] == "for":
         return "for"             # loop header only lists words, runs nothing
     return toks[0].rsplit("/", 1)[-1] if toks else ""
-if parts and all(prog(p) in READONLY | {"cd"} for p in parts) and not WRITE_HINT.search(cmd.replace("2>&1","").replace("2>/dev/null","")):
+if parts and all(prog(p) in READONLY | {"cd"} for p in parts) and not WRITE_HINT.search(inner.replace("2>&1","").replace("2>/dev/null","")):
     sys.exit(0)
 
 hits = [why for pat, why in RISKY if re.search(pat, cmd, re.I)]
