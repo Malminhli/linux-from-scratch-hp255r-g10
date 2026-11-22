@@ -25,7 +25,8 @@ READONLY = {"ls","cat","head","tail","less","grep","egrep","rg","find","stat","f
             "blkid","free","nproc","uname","lspci","lsusb","lsmod","ldd","readelf","pkg-config","wc","sort","uniq",
             "echo","printf","pwd","which","type","tree","diff","cmp","md5sum","sha256sum","journalctl","dmesg",
             "git","awk","cut","tr","column","true","test","[","realpath","readlink","basename","dirname","id","groups","date",
-            "for","done","fi","command","printf",""}
+            "for","done","fi","command","printf","",
+            "sed","zcat","zgrep","xzcat","bzcat","strings","comm","join","paste","nl","od","xxd","hexdump","jq","shopt","set","local","export","modinfo","objdump","nm","lddtree","stat","sha1sum","b2sum"}
 WRITE_HINT = re.compile(r">|\btee\b|-delete\b|-exec\b|\bsed\s+-i|git\s+(push|reset|clean|checkout|rebase)")
 flat = re.sub(r"\$\(|`|\)", " ; ", cmd)   # expose commands inside $( ) and backticks
 parts = [p.strip() for p in re.split(r"&&|\|\||[;|\n]", flat) if p.strip()]
