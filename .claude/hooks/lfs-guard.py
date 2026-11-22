@@ -16,18 +16,25 @@ except Exception:
 
 text = cmd.replace("2>&1", " ").replace("2>/dev/null", " ").replace("&>/dev/null", " ").replace(">/dev/null", " ")
 
-WRITES = re.compile(r"""
+# Write operations that are unambiguous wherever they appear.
+WRITE_OPS = re.compile(r"""
     (?<![<>=!-])>(?![=&])                                  # output redirect (not >=, ->, 2>&1)
   | \btee\b | \bsed\s+(?:-\w+\s+)*-\w*i | \bperl\s+-\w*i
-  | \b(?:cp|mv|rm|install|ln|chmod|chown|chgrp|touch|truncate|shred|unlink|rmdir|patch|dd)\b
-  | \b(?:useradd|usermod|userdel|groupadd|groupmod|groupdel|gpasswd|passwd|chpasswd|chsh|chage|vipw|vigr|visudo|pwconv|grpconv)\b
   | \bsystemctl\s+(?:\S+\s+)*(?:enable|disable|mask|unmask|edit|set-default|link|preset)\b
-  | \b(?:grub-\w+|update-grub|efibootmgr|mkinitcpio|dracut|bootctl)\b
-  | \b(?:mount|umount|swapon|swapoff|mkswap|losetup)\b
   | \b(?:make|ninja|meson|cmake)\b[^;&|]*\binstall\b
-  | \b(?:modprobe|insmod|rmmod|depmod)\b
   | \btar\s+(?:-\w*x|x)
 """, re.X)
+# Programs that write — but only when they are actually run (in command position),
+# so a list like `for b in passwd useradd` or a path like /etc/passwd doesn't count.
+WRITE_PROGS = (r"cp|mv|rm|install|ln|chmod|chown|chgrp|touch|truncate|shred|unlink|rmdir|patch|dd|"
+               r"useradd|usermod|userdel|groupadd|groupmod|groupdel|gpasswd|passwd|chpasswd|chsh|chage|vipw|vigr|visudo|pwconv|grpconv|"
+               r"grub-\w+|update-grub|efibootmgr|mkinitcpio|dracut|bootctl|"
+               r"mount|umount|swapon|swapoff|mkswap|losetup|modprobe|insmod|rmmod|depmod")
+CMD_POS = re.compile(r"""(?:^|[;&|(`\n{]|\bdo|\bthen|\belse|\bsudo(?:\s+-\S+)*|\bchroot\s+\S+(?:\s+/usr/bin/env(?:\s+-\S+)*(?:\s+\w+=\S*)*)?|-c\s+["']|\bxargs(?:\s+-\S+)*|\bexec|\btime|\bnohup)\s*(?:\w+=\S*\s+)*(?:/usr)?(?:/s?bin/)?(?:""" + WRITE_PROGS + r""")\b""")
+
+def writes(t):
+    t = re.sub(r"\bfor\s+\w+\s+in\b[^;\n]*", "for x in LIST", t)   # loop word-lists are data
+    return bool(WRITE_OPS.search(t) or CMD_POS.search(t))
 
 TOPICS = [
     (r"/etc/pam\.d|\bpam_|linux-pam", "يلمس PAM — غلطة هنا ممكن تقفلك برا LFS"),
@@ -44,7 +51,7 @@ RM_OUTSIDE_BUILD = re.compile(r"""\brm['"]?\s+(?:-\w+\s+)*-\w*[rf]\w*\s+(?!/sour
 reasons = []
 if RM_OUTSIDE_BUILD.search(text):
     reasons.append("حذف (rm -r/-f) خارج /sources/build")
-if WRITES.search(text):
+if writes(text):
     reasons += [why for pat, why in TOPICS if re.search(pat, text, re.I)]
 
 if reasons:
