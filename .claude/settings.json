@@ -47,8 +47,6 @@
       "WebFetch(domain:www.kernel.org)"
     ],
     "ask": [
-      "Bash(sudo rm *)",
-      "Bash(rm *)",
       "Bash(sudo tee *)",
       "Bash(sudo cp *)",
       "Bash(sudo mv *)",
