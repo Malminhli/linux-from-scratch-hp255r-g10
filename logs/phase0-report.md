@@ -29,7 +29,7 @@
   - xcb-util*، وXwayland، وgtk3/gtk4، وlibliftoff، وlua 5.5، وglaze، وكل مكتبات hypr*
   - الصوت: alsa، وpipewire، وwireplumber
   - bluez، والمستخدم `mohammed`، ومجموعة `render`، وlocale `ar_SA.UTF-8`
-- **محاولة قديمة:** فيه سكربت آلي سابق في `/mnt/lfs/sources/hyprland/` بنى 52 حزمة (السجلات في `/mnt/lfs/sources/hypr-logs/`)، ووقف عند Mesa. السبب الحقيقي `No module named 'yaml'`، مو مشكلة إصدار Python. وهالحزم ما انسجلت في `build-log.md`.
+- **محاولة قديمة:** فيه سكربت آلي سابق في `/mnt/lfs/sources/hyprland/` بنى 57 حزمة (السجلات في `/mnt/lfs/sources/hypr-logs/`)، ووقف عند Mesa. السبب الحقيقي `No module named 'yaml'`، مو مشكلة إصدار Python. هالحزم ما كانت مسجلة، وانضافت لاحقاً في قسم خاص آخر `build-log.md`.
 - **Mesa 26.2.3 تقدر تبني radeonsi بدون LLVM** (`-Damd-use-llvm=false`)، وهذا يعارض ملف الخبرة. الثمن إننا نخسر llvmpipe وzink كخيار احتياطي.
 - **firmware:**
   - ملفات `.zst` ما تنقرا لأن `FW_LOADER_COMPRESS` مطفي.
@@ -52,4 +52,6 @@ Hyprland صار يستخدم ملفات إعداد Lua من الإصدار 0.55.
 - **الثيم:** ad1822/hyprdots (Catppuccin). نشيل منه Quickshell وghostty وسكربتات swww وسكربت CPU حق Python، ونخفف الـ blur إلى مرورين.
 - **النواة:** موافق على `6.18.10-lfs-desktop` كمدخل إضافي، بشرط أعرض عليه الأوامر قبل ما ألمس GRUB أو `/boot`.
 - **Firefox:** النسخة الجاهزة الرسمية من موزيلا في `/opt`.
-- **افتراضات القائد (ما اعترض عليها):** Mesa بدون LLVM (`amd-use-llvm=false`، `vulkan-drivers=amd`)، وHyprland 0.56.2 من المصادر الموجودة.
+- **Mesa (قرار محمد، يلغي افتراض «بدون LLVM» السابق):** الكتاب المستقر كما هو: Mesa 25.3.5 مع LLVM 21.1.8 ومكتبات Xorg، حتى لو أخذ وقتاً أطول.
+- **افتراض القائد:** Hyprland 0.56.2 من المصادر الموجودة.
+- **الكتاب:** BLFS 13.0-systemd المستقر لكل الحزم، وإعادة بناء Shadow وsystemd بإصداراتها المثبتة (4.19.3 و259.1).

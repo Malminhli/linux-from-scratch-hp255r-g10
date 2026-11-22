@@ -16,3 +16,71 @@
 | polkit | 127 | installed | 1 | BLFS 13.0-systemd; md5 OK; user/group per book: groupadd -fg 27 polkitd, useradd -u 27 -g polkitd -d /etc/polkit-1 -s /bin/false; meson --prefix=/usr --buildtype=release -D session_tracking=logind -D tests=true **-D man=false** (libxslt/docbook absent) **-D introspection=false** (gobject-introspection not installed; glib built without GI); os_type auto=lfs, authfw=pam, PAM includes system-{auth,account,password,session}; PAM file → /usr/lib/pam.d/polkit-1 (book default pam_prefix; libpam 1.7.3 searches /usr/lib/pam.d), no /etc/pam.d/polkit-1; **tests built but not run**: all 5 fail at wrapper.py `import dbus` (D-Bus Python + dbusmock absent, no system bus in chroot, wrapper bind-mounts over /etc in a namespace) → rerun after boot once those are installed; polkit.service static (D-Bus activated), not enabled per book; polkitd ldd 0 not found; log /sources/logs/polkit-127.log, test output /sources/logs/polkit-127-test.out |
 | locale ar_SA.UTF-8 | glibc 2.43 | done | 1 | `localedef -i ar_SA -f UTF-8 ar_SA.UTF-8`; en_US.UTF-8 already present; /etc/locale.conf stays LANG=en_US.UTF-8 |
 | user mohammed | — | created | 1 | `useradd -m -s /bin/bash -G video,audio,input,wheel mohammed` → uid/gid 1000; no `render` group (BLFS 13.0 maps renderD128 to video); /etc/skel absent so home is empty; password set by Mohammed via chpasswd (PAM) |
+| Mako (pre-existing) | 1.4.3 | present | — | installed earlier by pip (2026-10-13, before this log); book 13.0 has 1.3.10; kept (newer, works with Mesa) |
+| fix systemd-oom passwd entry | — | done | 1 | pre-existing LFS typo `…Daemon:/://:/usr/bin/false` (8 fields, getent error) → `…Daemon:/:/usr/bin/false`; `pwconv` added the missing shadow line; backup /etc/passwd.pre-oomfix |
+| password for mohammed | — | set | 1 | set by Mohammed with chpasswd through PAM (yescrypt); pamcheck: login and sudo → PAM_SUCCESS |
+| **Phase 1 QA** | — | **VERIFIED** | — | qa-verifier: PAM, Shadow, systemd+PAM, sudo, polkit, PyYAML, locale, user, ownership, boot safety all PASS; runtime logind/polkit checks wait for the first real boot |
+
+## Built earlier (2026-10-13) by the automated script, before this log
+
+57 packages listed in `/sources/hypr-logs/done/`; versions from `/sources/hyprland/packages.txt` (planned version; actual installed version may differ, e.g. CMake reports 4.0.5). The script stopped at Mesa (missing PyYAML).
+
+| Package | Version | Status | Time | Notes |
+|---|---|---|---|---|
+| abseil-cpp | 20260817.0 | installed (2026-10-13) | — | cmake; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| cairo | 1.18.6 | installed (2026-10-13) | — | meson; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| cargo-c-bin | 0.10.26 | installed (2026-10-13) | — | prebuilt; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| cmake | 4.4.4 | installed (2026-10-13) | — | cmake-if-old; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| curl | 8.22.0 | installed (2026-10-13) | — | autotools; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| fontconfig | 2.18.3 | installed (2026-10-13) | — | meson; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| freetype | 2.14.3 | installed (2026-10-13) | — | autotools; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| fribidi | 1.0.17 | installed (2026-10-13) | — | meson; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| git | 2.56.0 | installed (2026-10-13) | — | autotools; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| glib | 2.90.1 | installed (2026-10-13) | — | meson; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| glslang | 16.6.0 | installed (2026-10-13) | — | cmake; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| harfbuzz | 14.6.0 | installed (2026-10-13) | — | meson; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| hwdata | 0.412 | installed (2026-10-13) | — | autotools; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| iniparser | 4.3.2 | installed (2026-10-13) | — | cmake; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| lcms2 | 2.19.1 | installed (2026-10-13) | — | autotools; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| libdisplay-info | 0.4.0 | installed (2026-10-13) | — | meson; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| libdrm | 2.4.134 | installed (2026-10-13) | — | meson; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| libei | 1.6.0 | installed (2026-10-13) | — | meson; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| libevdev | 1.14.0 | installed (2026-10-13) | — | meson; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| libinput | 1.32.0 | installed (2026-10-13) | — | meson; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| libjpeg-turbo | 3.2.0 | installed (2026-10-13) | — | cmake; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| libpng | 1.6.59 | installed (2026-10-13) | — | autotools; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| librsvg | 2.63.2 | installed (2026-10-13) | — | meson; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| libtasn1 | 4.21.0 | installed (2026-10-13) | — | autotools; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| libwebp | 1.6.0 | installed (2026-10-13) | — | autotools; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| libX11 | 1.8.13 | installed (2026-10-13) | — | autotools; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| libXau | 1.0.12 | installed (2026-10-13) | — | autotools; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| libxcb | 1.17.0 | installed (2026-10-13) | — | autotools; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| libXcursor | 1.2.3 | installed (2026-10-13) | — | autotools; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| libXdmcp | 1.1.5 | installed (2026-10-13) | — | autotools; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| libXfixes | 6.0.2 | installed (2026-10-13) | — | autotools; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| libxkbcommon | 1.13.2 | installed (2026-10-13) | — | meson; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| libxml2 | 2.15.4 | installed (2026-10-13) | — | autotools; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| libXrender | 0.9.12 | installed (2026-10-13) | — | autotools; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| libzip | 1.12 | installed (2026-10-13) | — | cmake; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| make-ca | 1.16.1 | installed (2026-10-13) | — | make; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| mtdev | 1.1.7 | installed (2026-10-13) | — | autotools; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| muparser | 2.3.5 | installed (2026-10-13) | — | cmake; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| p11-kit | 0.26.5 | installed (2026-10-13) | — | meson; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| pango | 1.58.2 | installed (2026-10-13) | — | meson; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| pcre2 | 10.49 | installed (2026-10-13) | — | autotools; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| pixman | 0.46.4 | installed (2026-10-13) | — | meson; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| pugixml | 1.16 | installed (2026-10-13) | — | cmake; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| py-mako | 1.4.3 | installed (2026-10-13) | — | wheel; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| py-meson | 1.12.1 | installed (2026-10-13) | — | wheel; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| py-packaging | 26.3 | installed (2026-10-13) | — | wheel; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| re2 | 2025-11-05 | installed (2026-10-13) | — | cmake; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| rust-bin | 1.99.0 | installed (2026-10-13) | — | prebuilt; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| seatd | 0.9.3 | installed (2026-10-13) | — | meson; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| tomlplusplus | 3.4.0 | installed (2026-10-13) | — | meson; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| wayland | 1.26.0 | installed (2026-10-13) | — | meson; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| wayland-protocols | 1.49 | installed (2026-10-13) | — | meson; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| wget | 1.25.0 | installed (2026-10-13) | — | autotools; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| xcb-proto | 1.17.0 | installed (2026-10-13) | — | autotools; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| xkeyboard-config | 2.48 | installed (2026-10-13) | — | meson; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| xorgproto | 2026.1 | installed (2026-10-13) | — | meson; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
+| xtrans | 1.6.0 | installed (2026-10-13) | — | autotools; earlier automated script `/sources/hyprland/build-in-chroot.sh`, not following the BLFS book |
