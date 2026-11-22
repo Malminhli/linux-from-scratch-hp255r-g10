@@ -6,7 +6,7 @@ description: Standard procedure for building one package inside the LFS chroot p
 # Building one package (BLFS way)
 
 ## 0. Look it up
-- Open the package page in the BLFS **systemd** book: https://www.linuxfromscratch.org/blfs/view/systemd/ (use the search or the index). Note: version, download URL, MD5, **Required** and **Recommended** deps, and the exact commands.
+- Open the package page in the **stable BLFS 13.0-systemd** book, which matches LFS 13.0: https://www.linuxfromscratch.org/blfs/view/13.0-systemd/ (use the search or the index). **Not** the development book `/blfs/view/systemd/`: its versions run ahead of LFS 13.0 (systemd 262.2 / shadow 4.20.3 there vs 259.1 / 4.19.3 installed), so following it silently upgrades core packages. Rebuilds of LFS packages (Shadow, systemd, …) must use the version already installed. If a package exists only in the dev book, stop and ask the lead. Note: version, download URL, MD5, **Required** and **Recommended** deps, and the exact commands.
 - Not in BLFS (Hyprland stack, waybar, swww, …)? Use the latest tagged release from the official repo and its README build steps. Record the exact tag.
 - Check deps exist: `pkg-config --exists <dep> && pkg-config --modversion <dep>`.
 

@@ -5,6 +5,9 @@ description: Expert knowledge base for turning LFS 13.0-systemd into a Hyprland 
 
 # What an expert knows that the book doesn't shout about
 
+## Which book (read first)
+The reference is the **stable BLFS 13.0-systemd** book — https://www.linuxfromscratch.org/blfs/view/13.0-systemd/ — because it matches LFS 13.0. **Do not use the development book** (`/blfs/view/systemd/`): its pages look identical but list newer versions (systemd 262.2, shadow 4.20.3, Linux-PAM 1.7.3 vs 259.1, 4.19.3, 1.7.2 in 13.0). Following it once already pulled in Linux-PAM 1.7.3 instead of 1.7.2. When the book says "reinstall Shadow/systemd", reinstall the **installed** version (Shadow 4.19.3, systemd 259.1) — never upgrade a core package as a side effect.
+
 ## The hidden foundation (do these BEFORE any graphics)
 1. **Linux-PAM is not in base LFS, and the desktop needs it.** greetd, hyprlock, sudo, polkit all authenticate through PAM. BLFS order: build Linux-PAM → **rebuild Shadow** (so `login`/`passwd` use PAM) → **rebuild systemd** (so `pam_systemd` exists and logind registers sessions). Skip the systemd rebuild and you get a desktop where logind never creates a session, `XDG_RUNTIME_DIR` is missing, and nothing has GPU/input access.
    Before rebuilding Shadow, make sure `/etc/pam.d/{login,passwd,su,system-*,other}` follow BLFS exactly — a broken `/etc/pam.d` locks you out of the LFS system. Keep a root shell inside the chroot until `login` is verified.
