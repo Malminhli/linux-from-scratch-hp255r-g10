@@ -38,9 +38,9 @@ Always check with `findmnt -R $LFS` that nothing is mounted twice.
 
 ## 3. Run commands inside
 
-Non-interactive (what Claude Code should use — one command per call):
+Non-interactive (what Claude Code should use — one command per call). Write the path literally as `/mnt/lfs` (not `$LFS`) so the project's permission rule auto-approves it:
 ```bash
-sudo chroot "$LFS" /usr/bin/env -i HOME=/root TERM="$TERM" \
+sudo chroot /mnt/lfs /usr/bin/env -i HOME=/root TERM="$TERM" \
   PATH=/usr/bin:/usr/sbin MAKEFLAGS="-j$(nproc)" \
   /bin/bash --login -c 'cd /sources && <commands>'
 ```

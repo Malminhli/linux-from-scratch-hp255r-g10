@@ -19,7 +19,7 @@ md5sum <tarball>        # compare with BLFS
 ## 2. Build in a clean dir
 ```bash
 mkdir -p /sources/build /sources/logs && cd /sources/build
-rm -rf <pkg>-<ver> && tar -xf /sources/<tarball> && cd <pkg>-<ver>
+rm -rf /sources/build/<pkg>-<ver> && tar -xf /sources/<tarball> && cd <pkg>-<ver>
 ```
 Pick the build system the book shows:
 
@@ -52,3 +52,6 @@ Append to `logs/build-log.md` in the repo:
 1. Read the last 60 lines of the log, then `config.log` / `build/meson-logs/meson-log.txt`.
 2. Classify: missing dep → build dep first · wrong version → check BLFS errata · compiler error → search the upstream issue tracker for the exact error.
 3. Max two identical retries. Then report to the lead with the error and a diagnosis.
+
+## Permissions note
+Cleanup must use the absolute path `rm -rf /sources/build/<pkg>-<ver>` — the project guard hook lets that through silently and stops for any other `rm -rf`. Commands that touch PAM, users, `/boot`/GRUB, fstab, sudoers, other partitions, or network services will always pause for Mohammed's approval; that is intended, don't try to phrase around it.
