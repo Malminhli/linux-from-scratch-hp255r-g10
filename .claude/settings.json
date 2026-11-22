@@ -57,7 +57,6 @@
       "Bash(sudo grub-mkconfig *)",
       "Bash(sudo pacman *)",
       "Bash(pacman *)",
-      "Bash(git push *)",
       "Bash(git reset *)",
       "Bash(git clean *)",
       "Edit(//mnt/lfs/**)",
