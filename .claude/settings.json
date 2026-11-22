@@ -49,10 +49,6 @@
     "ask": [
       "Bash(sudo rm *)",
       "Bash(rm *)",
-      "Bash(sudo mount *)",
-      "Bash(sudo umount *)",
-      "Bash(mount *)",
-      "Bash(umount *)",
       "Bash(sudo tee *)",
       "Bash(sudo cp *)",
       "Bash(sudo mv *)",

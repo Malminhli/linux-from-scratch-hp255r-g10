@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """LFS safety guard (PreToolUse hook for Bash).
 
-Stops and asks Mohammed ONLY when a command both
-  1) actually changes something (writes, installs, deletes, edits users/services/boot), and
-  2) touches a sensitive area (PAM, users, boot/GRUB/kernel, fstab/sudoers, other partitions,
-     network setup) — or deletes outside /sources/build.
+Stops and asks Mohammed ONLY when a command
+  - writes AND touches boot/GRUB/kernel install (/boot, vmlinuz, grub, efibootmgr, modules_install…)
+    or a partition other than LFS's nvme0n1p6, or
+  - runs rm -r/-f on anything but /sources/build/<dir>, or
+  - formats/partitions/wipes (mkfs*, wipefs, fdisk, parted, dd of=, find -delete…).
 Pure reads never stop, however they are written. Prints a PreToolUse 'ask' decision or nothing.
 
 After ANY change here run:  python3 -I .claude/hooks/test_guard.py   (must report all passed).
@@ -99,6 +100,7 @@ WRITE_OPS = re.compile(r"""
   | \btee\b | \bsed\s+(?:-\w+\s+)*-\w*i | \bperl\s+-\w*i
   | \bsystemctl\s+(?:\S+\s+)*(?:enable|disable|mask|unmask|edit|set-default|link|preset)\b
   | \b(?:make|ninja|meson|cmake)\b[^;&|]*\binstall\b
+  | \bmodules_install\b | \binstallkernel\b | \bkernel-install\b | \bdracut\b | \bmkinitcpio\b   # kernel/initramfs install
   | \btar\s+(?:-\w*x|x)
   | \befibootmgr\b[^;&|]*\s(?:--(?:create|delete|bootorder|bootnext|active|inactive)|-[cBbonNaAt]\b)
 """, re.X)
@@ -114,14 +116,13 @@ def writes(t):
     t = re.sub(r"\bfor\s+\w+\s+in\b[^;\n]*", "for x in LIST", t)   # loop word-lists are data
     return bool(WRITE_OPS.search(t) or CMD_POS.search(t))
 
+# Since 2026-11-22 Mohammed keeps stops ONLY for boot/GRUB/kernel install and other partitions
+# (plus rm -r/-f outside /sources/build and format tools, handled below). PAM, users/passwords,
+# network, mount, fstab/sudoers writes no longer stop.
 TOPICS = [
-    (r"/etc/pam\.d|\bpam_|linux-pam", "يلمس PAM — غلطة هنا ممكن تقفلك برا LFS"),
-    (r"/etc/(?:passwd|shadow|group|gshadow)\b|\b(?:useradd|usermod|userdel|passwd|chpasswd|gpasswd|vipw)\b", "يعدّل المستخدمين أو كلمات السر"),
-    (r"/boot\b|vmlinuz|\bgrub|efibootmgr|bootctl|/efi\b|\bmodules_install\b", "يلمس الإقلاع أو النواة أو GRUB"),
-    (r"/etc/fstab|/etc/sudoers", "يعدّل fstab أو sudoers"),
+    (r"/boot\b|vmlinuz|\bgrub|efibootmgr|bootctl|/efi\b|\bmodules_install\b|\binstallkernel\b|\bkernel-install\b|\bdracut\b|\bmkinitcpio\b",
+     "يلمس الإقلاع أو النواة أو GRUB"),
     (r"nvme0n1p[0-57-9]\b|/dev/nvme0n1\b(?!p6)", "يلمس قسم غير قسم LFS (p6)"),
-    (r"/etc/systemd/network|wpa_supplicant|systemctl\s+(?:\S+\s+)*(?:disable|mask)\b", "يغيّر الشبكة الحالية أو يطفّي خدمات"),
-    (r"\bmount\b|\bumount\b", "يركّب أو يفك أقسام"),
 ]
 
 # Destructive no matter where: filesystem/partition tools, find -delete, rm --recursive/--force.
