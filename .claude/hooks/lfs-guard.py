@@ -23,12 +23,13 @@ WRITE_OPS = re.compile(r"""
   | \bsystemctl\s+(?:\S+\s+)*(?:enable|disable|mask|unmask|edit|set-default|link|preset)\b
   | \b(?:make|ninja|meson|cmake)\b[^;&|]*\binstall\b
   | \btar\s+(?:-\w*x|x)
+  | \befibootmgr\b[^;&|]*\s(?:--(?:create|delete|bootorder|bootnext|active|inactive)|-[cBbonNaAt]\b)
 """, re.X)
 # Programs that write — but only when they are actually run (in command position),
 # so a list like `for b in passwd useradd` or a path like /etc/passwd doesn't count.
 WRITE_PROGS = (r"cp|mv|rm|install|ln|chmod|chown|chgrp|touch|truncate|shred|unlink|rmdir|patch|dd|"
                r"useradd|usermod|userdel|groupadd|groupmod|groupdel|gpasswd|passwd|chpasswd|chsh|chage|vipw|vigr|visudo|pwconv|grpconv|"
-               r"grub-\w+|update-grub|efibootmgr|mkinitcpio|dracut|bootctl|"
+               r"grub-(?:install|mkconfig|set-default|reboot|editenv|mkimage)|update-grub|mkinitcpio|dracut|bootctl|"
                r"mount|umount|swapon|swapoff|mkswap|losetup|modprobe|insmod|rmmod|depmod")
 CMD_POS = re.compile(r"""(?:^|[;&|(`\n{]|\bdo|\bthen|\belse|\bsudo(?:\s+-\S+)*|\bchroot\s+\S+(?:\s+/usr/bin/env(?:\s+-\S+)*(?:\s+\w+=\S*)*)?|-c\s+["']|\bxargs(?:\s+-\S+)*|\bexec|\btime|\bnohup)\s*(?:\w+=\S*\s+)*(?:/usr)?(?:/s?bin/)?(?:""" + WRITE_PROGS + r""")\b""")
 
