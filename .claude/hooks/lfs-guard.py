@@ -6,6 +6,8 @@ Stops and asks Mohammed ONLY when a command both
   2) touches a sensitive area (PAM, users, boot/GRUB/kernel, fstab/sudoers, other partitions,
      network setup) — or deletes outside /sources/build.
 Pure reads never stop, however they are written. Prints a PreToolUse 'ask' decision or nothing.
+
+After ANY change here run:  python3 -I .claude/hooks/test_guard.py   (must report all passed).
 """
 import json, re, sys
 
