@@ -1,6 +1,6 @@
 {
   "permissions": {
-    "defaultMode": "default",
+    "defaultMode": "auto",
     "additionalDirectories": ["/mnt/lfs"],
     "allow": [
       "Read(//mnt/lfs/**)",
