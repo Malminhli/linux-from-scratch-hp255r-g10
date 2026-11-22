@@ -19,7 +19,7 @@ The reference is the **stable BLFS 13.0-systemd** book — https://www.linuxfrom
 - **LLVM is mandatory for radeonsi** (and RADV uses ACO but Mesa still wants LLVM for radeonsi). Build with `-D LLVM_TARGETS_TO_BUILD="host;AMDGPU" -D LLVM_BUILD_LLVM_DYLIB=ON -D LLVM_LINK_LLVM_DYLIB=ON`. Use `-j6`: `-j12` on this 16G machine can OOM during linking.
 - Mesa: `-D gallium-drivers=radeonsi,zink -D vulkan-drivers=amd -D platforms=wayland,x11 -D gbm=enabled -D egl=enabled -D glvnd=disabled -D valgrind=disabled`. Needs: libdrm (with amdgpu), wayland-protocols, `python3 -m pip` modules `mako` and `pyyaml` (in BLFS as Mako/PyYAML), glslang for Vulkan, libva optional, `libclc`/`SPIRV-*` only if rusticl is enabled (leave it off).
 - **Firmware**: the 680M (Rembrandt-R / `yellow_carp`) needs `/lib/firmware/amdgpu/yellow_carp_*.bin` plus `dcn_3_1_*`/`psp_13_0_*` per `dmesg`. Missing firmware = amdgpu falls back to simpledrm = llvmpipe = slow desktop. Verify with `dmesg | grep -i amdgpu` after boot.
-- The user must be in `video` and `render` groups, and `/dev/dri/renderD128` must exist.
+- The user must be in the `video` group, and `/dev/dri/renderD128` must exist. **No `render` group:** the BLFS 13.0 systemd rebuild seds `50-udev-default.rules.in` so `GROUP="render"` becomes `GROUP="video"` (and drops `sgx`), so `renderD128` is `root:video`. Check with `ls -l /dev/dri/`.
 - Success signal: `glxinfo -B` shows `AMD Radeon 680M (radeonsi, rembrandt, …)`, `vulkaninfo --summary` shows `RADV REMBRANDT`. `llvmpipe` anywhere = failure.
 
 ## Hyprland stack — version lock-step

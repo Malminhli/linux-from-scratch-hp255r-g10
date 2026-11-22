@@ -13,7 +13,7 @@ You audit an LFS 13.0-systemd system mounted on the Arch host (usually at `/mnt/
 2. **Installed software**: list `<root>/usr/bin`, `<root>/usr/lib/pkgconfig/*.pc`, `<root>/usr/lib/*.so*`. For each package in the desktop plan, report: present (with version from `.pc` or `--version` via chroot only if already mounted by the lead — otherwise from file names) / missing.
    Desktop plan packages: make-ca, sudo, which, cmake, meson, ninja, rustc, llvm, libdrm, mesa, vulkan-loader, libinput, libevdev, mtdev, libxkbcommon, wayland, wayland-protocols, pixman, cairo, pango, freetype, fontconfig, harfbuzz, linux-pam, polkit, xwayland, hyprland and its hypr* libs, aquamarine, greetd, pipewire, wireplumber, networkmanager or iwd, bluez, kitty/foot, waybar, rofi/wofi, mako, grim, slurp, wl-clipboard, brightnessctl, gtk3, gtk4, firefox.
 3. **Firmware**: `<root>/lib/firmware/amdgpu/` (look for `yellow_carp_*` files — the 680M) and `<root>/lib/firmware/rtw89/`. Report missing files.
-4. **Users**: does a non-root user exist? Which groups exist (video, audio, input, render, wheel)?
+4. **Users**: does a non-root user exist? Which groups exist (video, audio, input, wheel)? (No `render` group by design: BLFS 13.0 maps renderD128 to `video`.)
 5. **Services**: enabled units under `<root>/etc/systemd/system/*.wants/`.
 6. **Network config**: how Wi‑Fi is currently brought up (wpa_supplicant? iwd? systemd-networkd?).
 

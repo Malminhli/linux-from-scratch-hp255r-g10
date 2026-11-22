@@ -49,7 +49,7 @@ description: المهمة الكاملة — تحويل LFS على /dev/nvme0n1p
 - `desktop-ricer` يجيب 3 ثيمات مرشحة (انظر المرحلة 4) — بس بحث، بدون تركيب.
 - اعرض على محمد: التقرير + الناقص + الثيمات الثلاثة + تقدير الوقت. **انتظر موافقته واختياره للثيم.**
 
-**المرحلة 1 — الأساس (أهم مرحلة، لا تستعجل):** النسخة الاحتياطية، `make-ca` + `p11-kit`، **Linux-PAM ← إعادة بناء Shadow ← إعادة بناء systemd مع PAM** (اقرأ skill `lfs-desktop-expertise` قبلها، وتحقق إن `login` يشتغل قبل ما تكمل)، `sudo`، `which`، polkit، أدوات البناء الناقصة (cmake/meson/ninja/rust حسب الحاجة)، Python modules (Mako, PyYAML)، مستخدم عادي `mohammed` بمجلد home ومجموعات `video,audio,input,render,wheel`.
+**المرحلة 1 — الأساس (أهم مرحلة، لا تستعجل):** النسخة الاحتياطية، `make-ca` + `p11-kit`، **Linux-PAM ← إعادة بناء Shadow ← إعادة بناء systemd مع PAM** (اقرأ skill `lfs-desktop-expertise` قبلها، وتحقق إن `login` يشتغل قبل ما تكمل)، `sudo`، `which`، polkit، أدوات البناء الناقصة (cmake/meson/ninja/rust حسب الحاجة)، Python modules (Mako, PyYAML)، مستخدم عادي `mohammed` بمجلد home ومجموعات `video,audio,input,wheel` (ما فيه مجموعة `render`: كتاب BLFS 13.0 يحوّل `renderD128` لمجموعة `video` عند إعادة بناء systemd).
 
 **المرحلة 2 — الرسوميات:** libdrm → LLVM (مطلوب لـradeonsi؛ بناؤه طويل) → Mesa (`-Dgallium-drivers=radeonsi -Dvulkan-drivers=amd`) → libinput/libevdev/mtdev → libxkbcommon → wayland + wayland-protocols → pixman/cairo/pango/fontconfig/freetype/harfbuzz → Xwayland (للتوافق). إدارة الـseat عن طريق systemd-logind (مو seatd daemon). وفي النهاية xdg-desktop-portal + portal-hyprland + portal-gtk. خطوط: Noto + Noto Arabic + Nerd Font واحد (JetBrainsMono).
 
