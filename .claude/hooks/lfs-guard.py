@@ -20,6 +20,23 @@ RISKY = [
     (r"chmod\s+-R|chown\s+-R\s+\S+\s+/(?!home|sources)", "تغيير صلاحيات بشكل واسع"),
 ]
 
+# Pure read-only commands never need a safety stop, even if they mention /boot or other partitions.
+READONLY = {"ls","cat","head","tail","less","grep","egrep","rg","find","stat","file","du","df","lsblk","findmnt",
+            "blkid","free","nproc","uname","lspci","lsusb","lsmod","ldd","readelf","pkg-config","wc","sort","uniq",
+            "echo","printf","pwd","which","type","tree","diff","cmp","md5sum","sha256sum","journalctl","dmesg",
+            "git","awk","cut","tr","column","true","test","[","realpath","readlink","basename","dirname","id","groups","date"}
+WRITE_HINT = re.compile(r">|\btee\b|-delete\b|-exec\b|\bsed\s+-i|git\s+(push|reset|clean|checkout|rebase)")
+parts = [p.strip() for p in re.split(r"&&|\|\||[;|\n]", cmd) if p.strip()]
+def prog(part):
+    toks = part.split()
+    while toks and ("=" in toks[0] and not toks[0].startswith("=")):  # VAR=x prefix
+        toks = toks[1:]
+    while toks and toks[0] in ("cd",):
+        return "cd"
+    return toks[0].rsplit("/", 1)[-1] if toks else ""
+if parts and all(prog(p) in READONLY | {"cd"} for p in parts) and not WRITE_HINT.search(cmd.replace("2>&1","").replace("2>/dev/null","")):
+    sys.exit(0)
+
 hits = [why for pat, why in RISKY if re.search(pat, cmd, re.I)]
 if hits:
     print(json.dumps({"hookSpecificOutput": {
