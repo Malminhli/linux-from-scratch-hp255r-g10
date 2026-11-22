@@ -27,7 +27,8 @@ READONLY = {"ls","cat","head","tail","less","grep","egrep","rg","find","stat","f
             "git","awk","cut","tr","column","true","test","[","realpath","readlink","basename","dirname","id","groups","date",
             "for","done","fi","command","printf",""}
 WRITE_HINT = re.compile(r">|\btee\b|-delete\b|-exec\b|\bsed\s+-i|git\s+(push|reset|clean|checkout|rebase)")
-parts = [p.strip() for p in re.split(r"&&|\|\||[;|\n]", cmd) if p.strip()]
+flat = re.sub(r"\$\(|`|\)", " ; ", cmd)   # expose commands inside $( ) and backticks
+parts = [p.strip() for p in re.split(r"&&|\|\||[;|\n]", flat) if p.strip()]
 def prog(part):
     toks = part.split()
     while toks and ("=" in toks[0] and not toks[0].startswith("=")):  # VAR=x prefix
