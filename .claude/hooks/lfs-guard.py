@@ -44,7 +44,7 @@ def prog(part):
     if toks and toks[0] == "for":
         return "for"             # loop header only lists words, runs nothing
     return toks[0].rsplit("/", 1)[-1] if toks else ""
-if parts and all(prog(p) in READONLY | {"cd"} for p in parts) and not WRITE_HINT.search(inner.replace("2>&1","").replace("2>/dev/null","")):
+if parts and all(prog(p) in READONLY | {"cd"} for p in parts) and not WRITE_HINT.search(re.sub(r"\"[^\"]*\"|'[^']*'", "", inner).replace("2>&1","").replace("2>/dev/null","")):
     sys.exit(0)
 
 hits = [why for pat, why in RISKY if re.search(pat, cmd, re.I)]
