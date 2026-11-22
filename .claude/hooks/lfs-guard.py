@@ -52,13 +52,28 @@ DESTRUCTIVE = re.compile(r"""\b(?:mkfs[\w.]*|mke2fs|mkswap|wipefs|blkdiscard|sfd
     | \bdd\b[^;&|]*\bof=
     | \bfind\b[^;&|]*\s-(?:delete|exec(?:dir)?\s+(?:/usr/bin/|/bin/)?(?:rm|shred|unlink|mv|chmod|chown)\b)
     | \bshred\b""", re.X)
-RM_LONG = re.compile(r"""\brm['"]?\s+(?:-\S+\s+)*--(?:recursive|force|no-preserve-root)\b(?![^;&|]*\s/sources/build/[\w.+-]+(?:\s|$|[;&|'"]))""")
-RM_OUTSIDE_BUILD = re.compile(r"""\brm['"]?\s+(?:-\w+\s+)*-\w*[rf]\w*\s+(?!/sources/build/[\w.+-]+(?:\s|$|[;&|'"]))""")
+import shlex
+BUILD_PATH = re.compile(r"^/sources/build/[\w.+-]+/?$")
+def rm_is_risky(t):
+    """True if any rm call is recursive/forced and targets anything other than plain /sources/build/<dir> paths."""
+    for m in re.finditer(r"""(?:^|[;&|(`\n{"']|\bdo|\bthen|\bsudo|\bxargs)\s*(?:/usr)?(?:/bin/)?['"]?rm['"]?(?=\s|$)([^;&|\n`"')]*)""", t):
+        try:
+            args = shlex.split(m.group(1))
+        except ValueError:
+            args = m.group(1).split()
+        flags = [a for a in args if a.startswith("-")]
+        paths = [a for a in args if not a.startswith("-")]
+        strong = any(f in ("--recursive", "--force", "--no-preserve-root") or
+                     (not f.startswith("--") and re.search(r"[rRf]", f)) for f in flags)
+        if strong and (not paths or not all(BUILD_PATH.match(p) for p in paths)):
+            return True
+    return False
+
 
 reasons = []
 if DESTRUCTIVE.search(text):
     reasons.append("أمر تدميري (فورمات/تقسيم/حذف جماعي)")
-if RM_OUTSIDE_BUILD.search(text) or RM_LONG.search(text):
+if rm_is_risky(text):
     reasons.append("حذف (rm -r/-f) خارج /sources/build")
 if writes(text):
     reasons += [why for pat, why in TOPICS if re.search(pat, text, re.I)]
