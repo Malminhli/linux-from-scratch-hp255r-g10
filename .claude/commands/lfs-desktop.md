@@ -28,6 +28,10 @@ description: المهمة الكاملة — تحويل LFS على /dev/nvme0n1p
 6. **وقّف واسأل محمد** قبل: تعديل النواة، أي أمر `rm -rf` خارج `/sources` أو مجلدات البناء، أي شي يلمس GRUB أو أقسام ثانية، واختيار الثيم.
 7. **سجّل كل شي** في `logs/` داخل هذا المستودع: كل حزمة اسمها وإصدارها ونتيجتها. وفي النهاية حدّث `README.md` و`docs/PROJECT_STORY_AR.md` بمرحلة جديدة عن الواجهة.
 
+## المعرفة
+
+اقرأ `.claude/skills/lfs-desktop-expertise/SKILL.md` قبل ما تبدأ، وخل كل وكيل يقرأه. فيه الفخاخ اللي تضيّع ساعات لو ما انتبهت لها.
+
 ## فريقك (subagents في `.claude/agents/`)
 
 | الوكيل | دوره | متى تستدعيه |
@@ -45,9 +49,9 @@ description: المهمة الكاملة — تحويل LFS على /dev/nvme0n1p
 - `desktop-ricer` يجيب 3 ثيمات مرشحة (انظر المرحلة 4) — بس بحث، بدون تركيب.
 - اعرض على محمد: التقرير + الناقص + الثيمات الثلاثة + تقدير الوقت. **انتظر موافقته واختياره للثيم.**
 
-**المرحلة 1 — الأساس:** النسخة الاحتياطية، `make-ca`/شهادات، `sudo`، `which`، أدوات البناء الناقصة (cmake/meson/ninja/rust حسب الحاجة)، مستخدم عادي `mohammed` بمجلد home ومجموعات `video,audio,input,render,seat,wheel`.
+**المرحلة 1 — الأساس (أهم مرحلة، لا تستعجل):** النسخة الاحتياطية، `make-ca` + `p11-kit`، **Linux-PAM ← إعادة بناء Shadow ← إعادة بناء systemd مع PAM** (اقرأ skill `lfs-desktop-expertise` قبلها، وتحقق إن `login` يشتغل قبل ما تكمل)، `sudo`، `which`، polkit، أدوات البناء الناقصة (cmake/meson/ninja/rust حسب الحاجة)، Python modules (Mako, PyYAML)، مستخدم عادي `mohammed` بمجلد home ومجموعات `video,audio,input,render,wheel`.
 
-**المرحلة 2 — الرسوميات:** libdrm → LLVM (مطلوب لـradeonsi؛ بناؤه طويل) → Mesa (`-Dgallium-drivers=radeonsi -Dvulkan-drivers=amd`) → libinput/libevdev/mtdev → libxkbcommon → wayland + wayland-protocols → pixman/cairo/pango/fontconfig/freetype/harfbuzz → seatd → Xwayland (للتوافق). خطوط: Noto + Noto Arabic + Nerd Font واحد (JetBrainsMono).
+**المرحلة 2 — الرسوميات:** libdrm → LLVM (مطلوب لـradeonsi؛ بناؤه طويل) → Mesa (`-Dgallium-drivers=radeonsi -Dvulkan-drivers=amd`) → libinput/libevdev/mtdev → libxkbcommon → wayland + wayland-protocols → pixman/cairo/pango/fontconfig/freetype/harfbuzz → Xwayland (للتوافق). إدارة الـseat عن طريق systemd-logind (مو seatd daemon). وفي النهاية xdg-desktop-portal + portal-hyprland + portal-gtk. خطوط: Noto + Noto Arabic + Nerd Font واحد (JetBrainsMono).
 
 **المرحلة 3 — الواجهة:** الافتراضي **Hyprland** (Wayland، أقوى مجتمع ثيمات على GitHub). اعتمادياته: hyprutils, hyprlang, hyprcursor, hyprgraphics, hyprwayland-scanner, aquamarine, tomlplusplus, re2, muparser… — ابنها بإصداراتها المتوافقة. **خطة بديلة:** لو Hyprland علّق بعد محاولات جادة، اقترح Sway (wlroots) على محمد بدل ما تضيع وقت. شاشة دخول: greetd + tuigreet (خفيفة وما تحتاج X).
 
