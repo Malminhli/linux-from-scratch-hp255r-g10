@@ -31,7 +31,8 @@ WRITE_HINT = re.compile(r">|\btee\b|-delete\b|-exec\b|\bsed\s+-i|git\s+(push|res
 # Unwrap `bash -c '...'` / `sh -c "..."` so the read-only check sees the real commands.
 m = re.match(r"""^\s*(?:/usr/bin/|/bin/)?(?:bash|sh)\s+(?:-\w+\s+)*-c\s+(['"])(.*)\1\s*$""", cmd, re.S)
 inner = m.group(2) if m else cmd
-flat = re.sub(r"\$\(|`|\)", " ; ", inner)   # expose commands inside $( ) and backticks
+noquote = re.sub(r"\"[^\"]*\"|'[^']*'", " Q ", inner)   # quoted text is data, not commands
+flat = re.sub(r"\$\(|`|\)", " ; ", noquote)   # expose commands inside $( ) and backticks
 parts = [p.strip() for p in re.split(r"&&|\|\||[;|\n]", flat) if p.strip()]
 def prog(part):
     toks = part.split()
