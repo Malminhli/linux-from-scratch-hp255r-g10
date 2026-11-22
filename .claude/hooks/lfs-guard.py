@@ -16,6 +16,81 @@ except Exception:
 
 text = cmd.replace("2>&1", " ").replace("2>/dev/null", " ").replace("&>/dev/null", " ").replace(">/dev/null", " ")
 
+# ---- Inline interpreter code (python -c, perl -e, awk '...', python/perl heredocs) is DATA ----
+# A `>` inside `awk '$3 > 100'` or `python3 -c "print(a > b)"` is not a shell redirect.
+# Such code is blanked out before the checks below — unless it writes, deletes or spawns
+# commands, in which case it is kept (so its paths are checked) and counts as a write.
+# Only interpreters in command position count, so `grep "python3 -c" f > x` is not mistaken for one.
+_BOUND = (r"""(?:^|[;&|(`\n{]|\b(?:do|then|else|exec|time|nohup|sudo|env|xargs)\b(?:\s+-\S+)*(?:\s+\w+=\S*)*"""
+          r"""|\bchroot\s+\S+|-c\s+["'])\s*(?:\w+=\S*\s+)*(?:[\w./-]*/)?""")
+_HEADS = [
+    ("py",   re.compile(_BOUND + r"""python[\d.]*(?:\s+-[A-Za-z]+)*?\s+-[A-Za-z]*c\s*""")),
+    ("perl", re.compile(_BOUND + r"""perl(?:\s+-\S+)*?\s+-[A-Za-z]*[eE]\s*""")),
+    ("awk",  re.compile(_BOUND + r"""[gmn]?awk(?:\s+-(?:[Fv]\s*(?:'[^']*'|"[^"]*"|\S+)|-?[\w-]+(?:=\S+)?))*\s+""")),
+]
+_HEREDOC = re.compile(_BOUND + r"""(python[\d.]*|perl)\b[^\n]*?<<-?\s*(['"]?)(\w+)\2[^\n]*\n""")
+_DANGER = {
+    "py": re.compile(r"""\bopen\s*\([^)]*?['"][rwxabt+]*[wax+][rwxabt+]*['"]|\.write_(?:text|bytes)\s*\(
+        | \bos\.(?:remove|unlink|rmdir|removedirs|rename|renames|replace|system|popen|spawn\w*|exec\w*|
+                  chmod|chown|lchown|truncate|mkdir|makedirs|symlink|link|mknod|open)\b
+        | \bO_(?:WRONLY|RDWR|CREAT|TRUNC|APPEND)\b | \bshutil\b | \bsubprocess\b | \bpty\b | \bctypes\b
+        | \bsystem\s*\( | \bunlink\s*\( | \.(?:rmdir|rename|replace|touch|symlink_to|chmod|unlink)\s*\(""", re.X),
+    "perl": re.compile(r"""\bopen\w*\b[^;]*?(?:['"]\s*(?:\+?>|\+<|\|)|\|\s*['"])
+        | \b(?:unlink|rename|rmdir|mkdir|chmod|chown|symlink|link|truncate|system|exec|qx|syswrite|rmtree)\b
+        | ` | \bFile::(?:Copy|Path|Temp)\b | \bIPC::""", re.X),
+    "awk": re.compile(r"""\bprintf?\b[^;}\n]*?(?<![<>=!])>(?!=) | \bprintf?\b[^;}\n]*?(?<!\|)\|(?!\|)
+        | (?<!\|)\|(?!\|)\s*getline | \|& | \bsystem\s*\(""", re.X),
+}
+
+def _quoted_at(t, i):
+    """(start, end) of the quoted shell word starting at t[i] — '…', "…" or \\"…\\" — else None.
+    Errs toward ending early, which only leaves more text for the checks (never less)."""
+    if t.startswith('\\"', i):
+        j = t.find('\\"', i + 2)
+        return (i, j + 2) if j != -1 else None
+    if t[i:i+1] == "'":
+        j = t.find("'", i + 1)
+        return (i, j + 1) if j != -1 else None
+    if t[i:i+1] == '"':
+        j = i + 1
+        while j < len(t):
+            if t[j] == "\\":
+                j += 2
+                continue
+            if t[j] == '"':
+                return (i, j + 1)
+            j += 1
+    return None
+
+def neutralize_inline_code(t):
+    """Return (text with harmless inline code blanked, True if any inline code writes/deletes/spawns)."""
+    spans = []
+    for lang, head in _HEADS:
+        for m in head.finditer(t):
+            q = _quoted_at(t, m.end())
+            if q:
+                spans.append((q[0], q[1], lang))
+    for m in _HEREDOC.finditer(t):
+        end = re.compile(r"\n[ \t]*" + re.escape(m.group(3)) + r"[ \t]*(?=\n|$)").search(t, m.end() - 1)
+        if end:
+            spans.append((m.end(), end.start(), "perl" if m.group(1) == "perl" else "py"))
+    spans.sort()
+    out, pos, risky = [], 0, False
+    for s, e, lang in spans:
+        if s < pos:                       # nested inside a span already handled
+            continue
+        code = t[s:e]
+        if lang == "awk":                 # awk string literals ("a -> b") can't redirect; the target of
+            code = re.sub(r'"(?:[^"\\]|\\.)*"', '""', code)   # `print > "f"` stays visible as `> ""`
+        if _DANGER[lang].search(code):
+            risky = True                  # keep it: its paths must still be checked
+            continue
+        out.append(t[pos:s]); out.append(" CODE "); pos = e
+    out.append(t[pos:])
+    return "".join(out), risky
+
+text, inline_code_writes = neutralize_inline_code(text)
+
 # Write operations that are unambiguous wherever they appear.
 WRITE_OPS = re.compile(r"""
     (?<![<>=!-])>(?![=&])                                  # output redirect (not >=, ->, 2>&1)
@@ -75,7 +150,7 @@ if DESTRUCTIVE.search(text):
     reasons.append("أمر تدميري (فورمات/تقسيم/حذف جماعي)")
 if rm_is_risky(text):
     reasons.append("حذف (rm -r/-f) خارج /sources/build")
-if writes(text):
+if writes(text) or inline_code_writes:
     reasons += [why for pat, why in TOPICS if re.search(pat, text, re.I)]
 
 if reasons:
